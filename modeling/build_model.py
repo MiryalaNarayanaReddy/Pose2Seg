@@ -143,7 +143,7 @@ class Pose2Seg(nn.Module):
                 timers['2'].tic()
                 ## best_align: {'category', 'template', 'matrix', 'score', 'history'}
                 best_align = self.poseAlignOp.align(kpt, size_feat, size_feat, 
-                                                    size_align, size_align, 
+                                                 size_align, size_align, 
                                                     visualize=False, return_history=False)
                 
                 ## aug

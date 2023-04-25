@@ -7,6 +7,8 @@ from datasets.CocoDatasetInfo import CocoDatasetInfo, annToMask
 from pycocotools import mask as maskUtils
 import matplotlib.pyplot as plt
 import cv2
+
+
 def test(model, dataset='cocoVal', logger=print):    
     if dataset == 'OCHumanVal':
         ImageRoot = './data/OCHuman/images'
@@ -17,12 +19,24 @@ def test(model, dataset='cocoVal', logger=print):
     elif dataset == 'cocoVal':
         ImageRoot = './data/coco2017/val2017'
         AnnoFile = './data/coco2017/annotations/person_keypoints_val2017_pose2seg.json'
+
+    elif dataset == 'image_dir':
+        ImageRoot = './data/images'
+        AnnoFile = './data/annotations/pose2seg.json'
+
+
     datainfos = CocoDatasetInfo(ImageRoot, AnnoFile, onlyperson=True, loadimg=True)
     
     model.eval()
     
     results_segm = []
     imgIds = []
+    # have to remove seg mask arg
+    # add coco file and check
+    # check if it works on images
+    # check if it works on video
+    # do it in one image
+    
     for i in tqdm(range(len(datainfos))):
         rawdata = datainfos[i]
         img = rawdata['data']
@@ -30,50 +44,26 @@ def test(model, dataset='cocoVal', logger=print):
         
         height, width = img.shape[0:2]
         gt_kpts = np.float32(rawdata['gt_keypoints']).transpose(0, 2, 1) # (N, 17, 3)
+        print(type(gt_kpts[0]))
+        print(gt_kpts.shape)
         gt_segms = rawdata['segms']
         gt_masks = np.array([annToMask(segm, height, width) for segm in gt_segms])
             
         output = model([img], [gt_kpts], [gt_masks])
         print(np.shape(output[0]))
         # model._visualizeOutput(output)
-        masked_img = cv2.bitwise_and(img,img,mask = output[0][0])
-        plt.imsave("t.png",masked_img)
+        # mask = output[0][0]
+        n = len(output[0])
+        for j in range(len(output[0])):
+             # color bitwise anded mask img
+            mask =  output[0][j]
+            imgr =  cv2.bitwise_and(img, img, mask=mask)
+            # imgr = cv2.cvtColor(imgr, )
+            # imgr = cv2.cvtColor(imgr, cv2.COLOR_BGR2RGB)
+            plt.imsave(f'{image_id}_{j}.png', imgr)
+           
+        # plt.imsave(f'{image_id}.png', final_img)
 
-    
-        for mask in output[0]:
-            maskencode = maskUtils.encode(np.asfortranarray(mask))
-            maskencode['counts'] = maskencode['counts'].decode('ascii')
-
-            results_segm.append({
-                    "image_id": image_id,
-                    "category_id": 1,
-                    "score": 1.0,
-                    "segmentation": maskencode
-                })
-            # plt.imsave(maskencode,"t.png")
-        imgIds.append(image_id)
-    
-    # plt.imsave(results)
-    def do_eval_coco(image_ids, coco, results, flag):
-        from pycocotools.cocoeval import COCOeval
-        assert flag in ['bbox', 'segm', 'keypoints']
-        # Evaluate
-        coco_results = coco.loadRes(results)
-        cocoEval = COCOeval(coco, coco_results, flag)
-        cocoEval.params.imgIds = image_ids
-        cocoEval.params.catIds = [1]
-        cocoEval.evaluate()
-        cocoEval.accumulate()
-        cocoEval.summarize() 
-        return cocoEval
-    
-    cocoEval = do_eval_coco(imgIds, datainfos.COCO, results_segm, 'segm')
-    logger('[POSE2SEG]          AP|.5|.75| S| M| L|    AR|.5|.75| S| M| L|')
-    _str = '[segm_score] %s '%dataset
-    for value in cocoEval.stats.tolist():
-        _str += '%.3f '%value
-    logger(_str)
-    
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description="Pose2Seg Testing")
     parser.add_argument(
@@ -82,14 +72,25 @@ if __name__=='__main__':
         type=str,
     )
     parser.add_argument(
-        "--coco",
-        help="Do test on COCOPersons val set",
-        action="store_true",
+        "--image_dir",
+        help="path to image directory",
+        type=str,
+    )
+    parser.add_argument(
+        "--video",
+        help="path to video",
+        type=str,
     )
     parser.add_argument(
         "--OCHuman",
-        help="Do test on OCHuman val&test set",
-        action="store_true",
+        help="test on OCHuman dataset",
+        action='store_true',
+    )
+
+    parser.add_argument(
+        "--coco",
+        help="test on coco dataset",
+        action='store_true',
     )
     
     args = parser.parse_args()
@@ -104,3 +105,9 @@ if __name__=='__main__':
     if args.OCHuman:
         # test(model, dataset='OCHumanVal')
         test(model, dataset='OCHumanTest') 
+    if args.video:
+        test(model, video=args.video)
+    if args.image_dir:
+        test(model, image_dir=args.image_dir)
+
+

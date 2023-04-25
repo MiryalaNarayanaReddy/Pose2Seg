@@ -1,3 +1,28 @@
+# Multiperson Pose2Seg 
+
+# Installing
+
+1. clone this repo
+2. Install dependencies from environment.yml
+
+# creating dataset for your own images
+Use [Multi-person-pose-estimation ](https://github.com/MiryalaNarayanaReddy/multi-person-pose-estimation) to generate pose keypoints for your images. This code creates dataset in compatible format for this repo.
+
+![image](./figures/multiperson_pose_estimation.png)
+
+
+# Testing (Getting segmented images)
+1. run the following to test on your own images
+```
+python realtime_run.py --weights pose2seg_release.pkl --img_dir <path> --kp <key_points_json> --save_dir <path>
+
+```
+
+This will give you the cropped segmented images in the save_dir folder.
+
+![image](./figures/multiperson_pose_estimation2.png)
+
+
 # Pose2Seg
 
 *Official* code for the paper "Pose2Seg: Detection Free Human Instance Segmentation"[[ProjectPage]](http://www.liruilong.cn/projects/pose2seg/index.html)[[arXiv]](https://arxiv.org/abs/1803.10683) @ CVPR2019.
